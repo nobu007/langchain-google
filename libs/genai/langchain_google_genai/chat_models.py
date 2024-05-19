@@ -41,10 +41,8 @@ from google.ai.generativelanguage_v1beta.types import (
     SafetySetting,
     ToolConfig,
 )
-from google.generativeai.types import Tool as GoogleTool  # type: ignore[import]
-from google.generativeai.types.content_types import (  # type: ignore[import]
-    FunctionDeclarationType,
-    ToolDict,
+from google.generativeai.types.content_types import (
+    FunctionDeclarationType,  # type: ignore[import]
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -84,6 +82,7 @@ from langchain_google_genai._common import (
     get_client_info,
 )
 from langchain_google_genai._function_utils import (
+    GeminiToolLike,
     _tool_choice_to_tool_config,
     _ToolChoiceType,
     _ToolConfigDict,
@@ -612,8 +611,8 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
 
     convert_system_message_to_human: bool = False
     """Whether to merge any leading SystemMessage into the following HumanMessage.
-    
-    Gemini does not support system messages; any unsupported messages will 
+
+    Gemini does not support system messages; any unsupported messages will
     raise an error."""
 
     class Config:
@@ -741,7 +740,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
-        tools: Optional[Sequence[Union[ToolDict, GoogleTool]]] = None,
+        tools: Optional[Sequence[GeminiToolLike]] = None,
         functions: Optional[Sequence[FunctionDeclarationType]] = None,
         safety_settings: Optional[SafetySettingDict] = None,
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
@@ -771,7 +770,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
-        tools: Optional[Sequence[Union[ToolDict, GoogleTool]]] = None,
+        tools: Optional[Sequence[GeminiToolLike]] = None,
         functions: Optional[Sequence[FunctionDeclarationType]] = None,
         safety_settings: Optional[SafetySettingDict] = None,
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
@@ -807,7 +806,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
-        tools: Optional[Sequence[Union[ToolDict, GoogleTool]]] = None,
+        tools: Optional[Sequence[GeminiToolLike]] = None,
         functions: Optional[Sequence[FunctionDeclarationType]] = None,
         safety_settings: Optional[SafetySettingDict] = None,
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
@@ -843,7 +842,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
-        tools: Optional[Sequence[Union[ToolDict, GoogleTool]]] = None,
+        tools: Optional[Sequence[GeminiToolLike]] = None,
         functions: Optional[Sequence[FunctionDeclarationType]] = None,
         safety_settings: Optional[SafetySettingDict] = None,
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
@@ -877,7 +876,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         messages: List[BaseMessage],
         *,
         stop: Optional[List[str]] = None,
-        tools: Optional[Sequence[Union[ToolDict, GoogleTool]]] = None,
+        tools: Optional[Sequence[GeminiToolLike]] = None,
         functions: Optional[Sequence[FunctionDeclarationType]] = None,
         safety_settings: Optional[SafetySettingDict] = None,
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
@@ -939,7 +938,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[ToolDict, GoogleTool]],
+        tools: Sequence[GeminiToolLike],
         tool_config: Optional[Union[Dict, _ToolConfigDict]] = None,
         *,
         tool_choice: Optional[Union[_ToolChoiceType, bool]] = None,
@@ -963,7 +962,9 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
                 f"both:\n\n{tool_choice=}\n\n{tool_config=}"
             )
         # Bind dicts for easier serialization/deserialization.
-        genai_tools = [tool_to_dict(convert_to_genai_function_declarations(tools))]
+        genai_tools = [
+            tool_to_dict(convert_to_genai_function_declarations(tool)) for tool in tools
+        ]
         if tool_choice:
             all_names = [
                 f["name"]  # type: ignore[index]
@@ -971,4 +972,5 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
                 for f in t["function_declarations"]
             ]
             tool_config = _tool_choice_to_tool_config(tool_choice, all_names)
+        return self.bind(tools=genai_tools, tool_config=tool_config, **kwargs)
         return self.bind(tools=genai_tools, tool_config=tool_config, **kwargs)
