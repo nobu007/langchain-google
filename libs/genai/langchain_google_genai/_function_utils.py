@@ -31,6 +31,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.json_schema import dereference_refs
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 log_level = os.environ.get("LOG_LEVEL", "WARNING").upper()
