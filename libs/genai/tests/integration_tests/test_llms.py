@@ -9,7 +9,8 @@ from typing import Generator
 import pytest
 from langchain_core.outputs import LLMResult
 
-from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
+from langchain_google_genai import GoogleGenerativeAI
+from langchain_google_genai._enums import HarmBlockThreshold, HarmCategory
 
 model_names = ["models/text-bison-001", "gemini-pro"]
 
@@ -23,7 +24,7 @@ def test_google_generativeai_call(model_name: str) -> None:
     if model_name:
         llm = GoogleGenerativeAI(max_output_tokens=10, model=model_name)
     else:
-        llm = GoogleGenerativeAI(max_output_tokens=10)
+        llm = GoogleGenerativeAI(max_output_tokens=10, model=model_names[0])
     output = llm("Say foo:")
     assert isinstance(output, str)
     assert llm._llm_type == "google_palm"

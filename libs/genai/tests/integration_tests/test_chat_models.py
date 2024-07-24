@@ -1,4 +1,5 @@
 """Test ChatGoogleGenerativeAI chat model."""
+
 import asyncio
 import json
 from typing import Generator, List, Optional, Type
@@ -18,11 +19,8 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import tool
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
-from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-    HarmBlockThreshold,
-    HarmCategory,
-)
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai._enums import HarmBlockThreshold, HarmCategory
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
 
 _MODEL = "models/gemini-1.0-pro-001"  # TODO: Use nano when it's available.
