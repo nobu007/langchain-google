@@ -4,9 +4,9 @@ from __future__ import annotations  # noqa
 
 import json
 import logging
+import uuid
 from dataclasses import dataclass, field
 from operator import itemgetter
-import uuid
 from typing import (
     Any,
     AsyncIterator,
@@ -14,29 +14,37 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
+    TypedDict,
     Union,
     cast,
-    Literal,
-    TypedDict,
     overload,
 )
 
 import proto  # type: ignore[import-untyped]
 from google.cloud.aiplatform import telemetry
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
+from google.cloud.aiplatform_v1beta1.types import (
+    Blob,
+    Candidate,
+    Content,
+    FileData,
+    FunctionCall,
+    FunctionResponse,
+    GenerateContentRequest,
+    GenerationConfig,
+    HarmCategory,
+    Part,
+    SafetySetting,
 )
+from google.cloud.aiplatform_v1beta1.types import Tool as GapicTool
+from google.cloud.aiplatform_v1beta1.types import ToolConfig as GapicToolConfig
+from google.cloud.aiplatform_v1beta1.types import VideoMetadata
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-    generate_from_stream,
-)
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams, generate_from_stream
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -48,28 +56,37 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.messages.tool import (
-    tool_call_chunk,
-    tool_call as create_tool_call,
-    invalid_tool_call,
-)
+from langchain_core.messages.tool import invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.output_parsers.openai_tools import (
-    JsonOutputToolsParser,
-    PydanticToolsParser,
-)
-from langchain_core.output_parsers.openai_tools import parse_tool_calls
+from langchain_core.output_parsers.openai_tools import JsonOutputToolsParser, PydanticToolsParser, parse_tool_calls
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator, Field
-from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableGenerator
-from vertexai.generative_models import (  # type: ignore
-    Tool as VertexTool,
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable, RunnableGenerator, RunnablePassthrough
+from langchain_google_vertexai._base import GoogleModelFamily, _VertexAICommon
+from langchain_google_vertexai._image_utils import ImageBytesLoader
+from langchain_google_vertexai._utils import (
+    _format_model_name,
+    create_retry_decorator,
+    get_generation_info,
+    is_gemini_model,
 )
+from langchain_google_vertexai.functions_utils import (
+    _format_to_gapic_tool,
+    _format_tool_config,
+    _tool_choice_to_tool_config,
+    _ToolChoiceType,
+    _ToolConfigDict,
+    _ToolsType,
+    _ToolType,
+)
+from vertexai.generative_models import Tool as VertexTool  # type: ignore
 from vertexai.generative_models._generative_models import (  # type: ignore
-    ToolConfig,
-    SafetySettingsType,
     GenerationConfigType,
     GenerationResponse,
+    SafetySettingsType,
+    ToolConfig,
     _convert_schema_dict_to_gapic,
 )
 from vertexai.language_models import (  # type: ignore
@@ -80,46 +97,8 @@ from vertexai.language_models import (  # type: ignore
     CodeChatSession,
     InputOutputTextPair,
 )
-from vertexai.preview.language_models import (  # type: ignore
-    ChatModel as PreviewChatModel,
-)
-from vertexai.preview.language_models import (
-    CodeChatModel as PreviewCodeChatModel,
-)
-
-from google.cloud.aiplatform_v1beta1.types import (
-    Blob,
-    Candidate,
-    Part,
-    HarmCategory,
-    Content,
-    FileData,
-    FunctionCall,
-    FunctionResponse,
-    GenerateContentRequest,
-    GenerationConfig,
-    SafetySetting,
-    Tool as GapicTool,
-    ToolConfig as GapicToolConfig,
-    VideoMetadata,
-)
-from langchain_google_vertexai._base import _VertexAICommon, GoogleModelFamily
-from langchain_google_vertexai._image_utils import ImageBytesLoader
-from langchain_google_vertexai._utils import (
-    create_retry_decorator,
-    get_generation_info,
-    _format_model_name,
-    is_gemini_model,
-)
-from langchain_google_vertexai.functions_utils import (
-    _format_tool_config,
-    _ToolConfigDict,
-    _tool_choice_to_tool_config,
-    _ToolChoiceType,
-    _ToolsType,
-    _format_to_gapic_tool,
-    _ToolType,
-)
+from vertexai.preview.language_models import ChatModel as PreviewChatModel  # type: ignore
+from vertexai.preview.language_models import CodeChatModel as PreviewCodeChatModel
 
 logger = logging.getLogger(__name__)
 
@@ -991,7 +970,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """
 
     cached_content: Optional[str] = None
-    """ Optional. Use the model in cache mode. Only supported in Gemini 1.5 and later 
+    """ Optional. Use the model in cache mode. Only supported in Gemini 1.5 and later
         models. Must be a string containing the cache name (A sequence of numbers)
     """
 
@@ -1652,7 +1631,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )

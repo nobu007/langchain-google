@@ -28,10 +28,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -40,13 +37,9 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnables import (
-    Runnable,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_google_vertexai._anthropic_parsers import (
     ToolsOutputParser,
     _extract_tool_calls,
@@ -148,10 +141,7 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        from anthropic import (  # type: ignore
-            AnthropicVertex,
-            AsyncAnthropicVertex,
-        )
+        from anthropic import AnthropicVertex, AsyncAnthropicVertex  # type: ignore
 
         values["client"] = AnthropicVertex(
             project_id=values["project"],
@@ -353,7 +343,7 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
 
         tool_name = convert_to_anthropic_tool(schema)["name"]
         llm = self.bind_tools([schema], tool_choice=tool_name)
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser = ToolsOutputParser(
                 first_tool_only=True, pydantic_schemas=[schema]
             )
