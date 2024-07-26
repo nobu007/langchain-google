@@ -162,7 +162,7 @@ def _format_to_gapic_function_declaration(
     "Format tool into the Vertex function declaration."
     if isinstance(tool, BaseTool):
         return _format_base_tool_to_function_declaration(tool)
-    elif isinstance(tool, type) and is_basemodel_subclass(tool):
+    elif isinstance(tool, type) and issubclass(tool, BaseModel):
         return _format_pydantic_to_function_declaration(tool)
     elif callable(tool):
         return _format_base_tool_to_function_declaration(callable_as_lc_tool()(tool))
