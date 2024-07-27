@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import importlib
 import json
 import logging
 import os
@@ -628,3 +629,24 @@ def _tool_choice_to_tool_config(
             "allowed_function_names": allowed_function_names,
         }
     )
+
+
+def is_basemodel_subclass_safe(tool: Type) -> bool:
+    if safe_import("langchain_core.utils.pydantic", "is_basemodel_subclass"):
+        from langchain_core.utils.pydantic import (
+            is_basemodel_subclass,  # type: ignore[import]
+        )
+
+        return is_basemodel_subclass(tool)
+    else:
+        return issubclass(tool, BaseModel)
+
+
+def safe_import(module_name: str, attribute_name: str = "") -> bool:
+    try:
+        module = importlib.import_module(module_name)
+        if attribute_name:
+            return hasattr(module, attribute_name)
+        return True
+    except ImportError:
+        return False

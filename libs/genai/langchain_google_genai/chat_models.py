@@ -104,6 +104,7 @@ from langchain_google_genai._function_utils import (
     _ToolChoiceType,
     _ToolConfigDict,
     convert_to_genai_function_declarations,
+    is_basemodel_subclass_safe,
     tool_to_dict,
 )
 from langchain_google_genai._image_utils import ImageBytesLoader
@@ -1189,7 +1190,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if isinstance(schema, type) and is_basemodel_subclass(schema):
+        if isinstance(schema, type) and is_basemodel_subclass_safe(schema):
             parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
