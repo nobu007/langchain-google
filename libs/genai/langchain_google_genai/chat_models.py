@@ -78,7 +78,6 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.utils import get_from_dict_or_env
-from langchain_core.utils.pydantic import is_basemodel_subclass
 from tenacity import (
     before_sleep_log,
     retry,
@@ -97,6 +96,7 @@ from langchain_google_genai._function_utils import (
     _ToolChoiceType,
     _ToolConfigDict,
     convert_to_genai_function_declarations,
+    is_basemodel_subclass_safe,
     tool_to_dict,
 )
 from langchain_google_genai._image_utils import ImageBytesLoader
@@ -1184,7 +1184,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if isinstance(schema, type) and is_basemodel_subclass(schema):
+        if isinstance(schema, type) and is_basemodel_subclass_safe(schema):
             parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
