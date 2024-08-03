@@ -75,6 +75,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from tenacity import (
     before_sleep_log,
     retry,
@@ -787,8 +788,8 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     google_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Google AI API key. 
-        
+    """Google AI API key.
+
     If not specified will be read from env var ``GOOGLE_API_KEY``."""
     default_metadata: Sequence[Tuple[str, str]] = Field(
         default_factory=list
@@ -796,8 +797,8 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
 
     convert_system_message_to_human: bool = False
     """Whether to merge any leading SystemMessage into the following HumanMessage.
-    
-    Gemini does not support system messages; any unsupported messages will 
+
+    Gemini does not support system messages; any unsupported messages will
     raise an error."""
 
     class Config:
@@ -1153,7 +1154,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
