@@ -401,6 +401,12 @@ def _is_nullable_schema(schema: Dict[str, Any]) -> bool:
     return False
 
 
+def _get_type_from_str(stype: str) -> int:
+    if stype in TYPE_ENUM:
+        return TYPE_ENUM[stype]
+    return TYPE_ENUM["string"]  # Default to string if no valid types found
+
+
 _ToolChoiceType = Union[
     dict, List[str], str, Literal["auto", "none", "any"], Literal[True]
 ]
