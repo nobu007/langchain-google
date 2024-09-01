@@ -5,6 +5,7 @@ import importlib
 import json
 import logging
 import os
+import traceback
 from typing import (
     Any,
     Callable,
@@ -185,6 +186,7 @@ def _format_json_schema_to_gapic(schema: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _dict_to_gapic_schema(schema: Dict[str, Any]) -> Optional[gapic.Schema]:
+    logger.info("_function_utils.py step2: Make request message start")
     logger.debug("_dict_to_gapic_schema\n  schema=%s", json.dumps(schema, indent=2))
     if schema:
         dereferenced_schema = dereference_refs(schema)
@@ -192,6 +194,7 @@ def _dict_to_gapic_schema(schema: Dict[str, Any]) -> Optional[gapic.Schema]:
         json_schema = json.dumps(formatted_schema)
         gapic_schema = gapic.Schema.from_json(json_schema)
         logger.debug("_dict_to_gapic_schema\n  gapic_schema=%s", gapic_schema)
+        logger.info("_function_utils.py step2: Make request message end")
         return gapic_schema
     return None
 
@@ -259,6 +262,7 @@ def _format_to_gapic_function_declaration(
     tool: _FunctionDeclarationLike,
 ) -> gapic.FunctionDeclaration:
     if isinstance(tool, BaseTool):
+        logger.debug("_format_to_gapic_function_declaration BaseTool")
         return _format_base_tool_to_function_declaration(tool)
     elif isinstance(tool, type) and is_basemodel_subclass_safe(tool):
         return _convert_pydantic_to_genai_function(tool)
@@ -275,6 +279,9 @@ def _format_to_gapic_function_declaration(
             ):
                 function = convert_to_openai_tool(cast(dict, tool))["function"]
             else:
+                logger.debug(
+                    "_format_to_gapic_function_declaration dict(no parameters2)"
+                )
                 function = cast(dict, tool)
         function["parameters"] = function.get("parameters") or {}
         # Empty 'properties' field not supported.
@@ -351,10 +358,17 @@ def _create_function_declaration(
 ) -> gapic.FunctionDeclaration:
     parameters = _create_function_declaration_parameters(schema)
     gapic_parameters = _dict_to_gapic_schema(parameters)
+    logger.debug(
+        "_convert_pydantic_to_genai_function\n  schema=%s", json.dumps(schema, indent=2)
+    )
     function_declaration = gapic.FunctionDeclaration(
-        name=name,
-        description=description,
+        name=name if name else schema.get("title"),
+        description=description if description else schema.get("description"),
         parameters=gapic_parameters,
+    )
+    logger.debug(
+        "_convert_pydantic_to_genai_function\n  function_declaration.parameters=%s",
+        function_declaration.parameters,
     )
     return function_declaration
 
@@ -388,20 +402,22 @@ def _get_function_declaration_from_schema(schema: Dict[str, Any]) -> Dict[str, A
         # parameters
         parameters = v.get("parameters")
         if parameters:
-            function_declaration[
-                "parameters"
-            ] = _create_function_declaration_parameters(parameters)
+            function_declaration["parameters"] = (
+                _create_function_declaration_parameters(parameters)
+            )
 
     return function_declaration
 
 
 def _create_function_declaration_parameters(schema: Dict[str, Any]) -> Dict[str, Any]:
-    logger.info(
+    logger.info("_function_utils.py step1: Prepare FunctionDeclaration start")
+    logger.debug(
         "_create_function_declaration_parameters schema=\n%s",
         json.dumps(schema, indent=2),
     )
+    logger.debug("Stack trace:\n%s", "".join(traceback.format_stack()))
     properties = _convert_dict_from_scheme_by_rule(schema.get("properties", {}))
-    logger.info(
+    logger.debug(
         "_create_function_declaration_parameters properties=\n%s",
         json.dumps(properties, indent=2),
     )
@@ -414,10 +430,11 @@ def _create_function_declaration_parameters(schema: Dict[str, Any]) -> Dict[str,
         "required": schema.get("required", []),
         "type_": _get_type_from_schema(schema),
     }
-    logger.info(
+    logger.debug(
         "_create_function_declaration_parameters parameters=\n%s",
         json.dumps(parameters, indent=2),
     )
+    logger.info("_function_utils.py step1: Prepare FunctionDeclaration end")
     return parameters
 
 
@@ -426,7 +443,7 @@ def _convert_dict_from_scheme_by_rule(schema: Dict[str, Any]) -> Dict[str, Any]:
     # drop unacceptable key
     # recursive check
     is_recursive = False
-    if "type" in schema:
+    if "type" in schema or "anyOf" in schema:
         schema["type_"] = _get_type_from_schema(schema)
     else:
         # this is entity for items/properties
@@ -483,6 +500,8 @@ def _get_schema_schema_from_dict(schema_dict: Dict) -> Dict[str, Any]:
 
     # TODO: add loop for each item like properties
     for k, v in schema_dict.items():
+        logger.debug("_get_schema_schema_from_dict k==%s", k)
+
         # enum
         if k == "enum":
             schema_schema["enum"] = v
