@@ -58,6 +58,45 @@ _ALLOWED_SCHEMA_FIELDS.extend(
 _ALLOWED_SCHEMA_FIELDS_SET = set(_ALLOWED_SCHEMA_FIELDS)
 
 
+def is_pydantic_model(cls: Type) -> bool:
+    # check attr for both Pydantic v1 and v2.
+    return hasattr(cls, "__fields__") and isinstance(cls.__fields__, dict)
+
+
+def get_pydantic_schema(model: Type[BaseModel]) -> Dict:
+    try:
+        # Pydantic v2
+        return get_pydantic_schema_v2(model)
+    except TypeError as e:
+        logger.debug("TypeError get_pydantic_schema_v2 e=%s", e)
+
+    try:
+        # Pydantic v1
+        return get_pydantic_schema_v1(model)
+    except TypeError as e:
+        logger.debug("TypeError get_pydantic_schema_v1 e=%s", e)
+
+    return {}
+
+
+def get_pydantic_schema_v2(model: Type[BaseModel]) -> Dict:
+    if hasattr(model, "model_json_schema"):
+        json_schema = model.model_json_schema()
+        return json_schema
+
+    raise TypeError(f"{model} is not Pydantic v2 model")
+
+
+def get_pydantic_schema_v1(model: Type[BaseModel]) -> Dict:
+    if hasattr(model, "schema_json"):
+        schema_dict = model.schema()
+        schema_json_str = json.dumps(schema_dict)
+    else:
+        raise TypeError(f"{model} is not Pydantic v1 model")
+    schema_json = json.loads(schema_json_str)
+    return schema_json
+
+
 class _ToolDictLike(TypedDict):
     function_declarations: _FunctionDeclarationLikeList
 
@@ -199,8 +238,9 @@ def _format_to_gapic_function_declaration(
 ) -> gapic.FunctionDeclaration:
     if isinstance(tool, BaseTool):
         return _format_base_tool_to_function_declaration(tool)
-    elif isinstance(tool, type) and issubclass(tool, BaseModel):
-        return _convert_pydantic_to_genai_function(tool)
+    elif is_pydantic_model(tool):  # type: ignore[arg-type]
+        # Type[BaseModel] or Type[BaseModel(v1)]
+        return _convert_pydantic_to_genai_function(tool)  # type: ignore[arg-type]
     elif isinstance(tool, dict):
         if all(k in tool for k in ("name", "description")) and "parameters" not in tool:
             function = cast(dict, tool)
