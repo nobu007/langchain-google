@@ -101,45 +101,6 @@ def get_pydantic_schema_v1(model: Type[BaseModel]) -> Dict:
     return schema_json
 
 
-def is_pydantic_model(cls: Type) -> bool:
-    # check attr for both Pydantic v1 and v2.
-    return hasattr(cls, "__fields__") and isinstance(cls.__fields__, dict)
-
-
-def get_pydantic_schema(model: Type[BaseModel]) -> Dict:
-    try:
-        # Pydantic v2
-        return get_pydantic_schema_v2(model)
-    except TypeError as e:
-        logger.debug("TypeError get_pydantic_schema_v2 e=%s", e)
-
-    try:
-        # Pydantic v1
-        return get_pydantic_schema_v1(model)
-    except TypeError as e:
-        logger.debug("TypeError get_pydantic_schema_v1 e=%s", e)
-
-    return {}
-
-
-def get_pydantic_schema_v2(model: Type[BaseModel]) -> Dict:
-    if hasattr(model, "model_json_schema"):
-        json_schema = model.model_json_schema()
-        return json_schema
-
-    raise TypeError(f"{model} is not Pydantic v2 model")
-
-
-def get_pydantic_schema_v1(model: Type[BaseModel]) -> Dict:
-    if hasattr(model, "schema_json"):
-        schema_dict = model.schema()
-        schema_json_str = json.dumps(schema_dict)
-    else:
-        raise TypeError(f"{model} is not Pydantic v1 model")
-    schema_json = json.loads(schema_json_str)
-    return schema_json
-
-
 class _ToolDictLike(TypedDict):
     function_declarations: _FunctionDeclarationLikeList
 
@@ -229,10 +190,9 @@ def _dict_to_gapic_schema(schema: Dict[str, Any]) -> Optional[gapic.Schema]:
         dereferenced_schema = dereference_refs(schema)
         formatted_schema = _format_json_schema_to_gapic(dereferenced_schema)
         json_schema = json.dumps(formatted_schema)
-        logger.debug(
-            "_dict_to_gapic_schema\n  json_schema=%s", json.dumps(json_schema, indent=2)
-        )
-        return gapic.Schema.from_json(json_schema)
+        gapic_schema = gapic.Schema.from_json(json_schema)
+        logger.debug("_dict_to_gapic_schema\n  gapic_schema=%s", gapic_schema)
+        return gapic_schema
     return None
 
 
@@ -440,9 +400,14 @@ def _create_function_declaration_parameters(schema: Dict[str, Any]) -> Dict[str,
         "_create_function_declaration_parameters schema=\n%s",
         json.dumps(schema, indent=2),
     )
+    properties = _convert_dict_from_scheme_by_rule(schema.get("properties", {}))
+    logger.info(
+        "_create_function_declaration_parameters properties=\n%s",
+        json.dumps(properties, indent=2),
+    )
     parameters = {
         # "properties": _get_schema_schema_from_dict(schema.get("properties")),
-        "properties": _get_properties_from_schema_any(schema.get("properties")),
+        "properties": properties,
         # "items": _get_items_from_schema_any(
         #     schema
         # ),  # TODO: fix it https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/function-calling?hl#schema
@@ -454,6 +419,40 @@ def _create_function_declaration_parameters(schema: Dict[str, Any]) -> Dict[str,
         json.dumps(parameters, indent=2),
     )
     return parameters
+
+
+def _convert_dict_from_scheme_by_rule(schema: Dict[str, Any]) -> Dict[str, Any]:
+    # type(str)-> _type(int)
+    # drop unacceptable key
+    # recursive check
+    is_recursive = False
+    if "type" in schema:
+        schema["type_"] = _get_type_from_schema(schema)
+    else:
+        # this is entity for items/properties
+        is_recursive = True
+
+    # recursive check
+    del_key_list = []
+    for key, value in schema.items():
+        if isinstance(value, dict):
+            if is_recursive:
+                schema[key] = _convert_dict_from_scheme_by_rule(value)
+            elif key in _ALLOWED_SCHEMA_FIELDS_SET:
+                schema[key] = _convert_dict_from_scheme_by_rule(value)
+
+        # drop check
+        if not is_recursive:
+            if key == "type" or (
+                key != "type_" and key not in _ALLOWED_SCHEMA_FIELDS_SET
+            ):
+                del_key_list.append(key)
+
+    # drop unacceptable key
+    for del_key in del_key_list:
+        del schema[del_key]
+
+    return schema
 
 
 def _get_properties_from_schema_any(schema: Any) -> Dict[str, Any]:

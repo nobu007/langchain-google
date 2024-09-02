@@ -79,7 +79,6 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from pydantic import BaseModel, Field, model_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_google_vertexai._base import GoogleModelFamily, _VertexAICommon
 from langchain_google_vertexai._image_utils import ImageBytesLoader
 from langchain_google_vertexai._utils import (
