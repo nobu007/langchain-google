@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import BaseTool
 
 from langchain_google_community.gmail.create_draft import GmailCreateDraft

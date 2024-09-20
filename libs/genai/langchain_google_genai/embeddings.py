@@ -8,8 +8,8 @@ from google.ai.generativelanguage_v1beta.types import (
     EmbedContentRequest,
 )
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, SecretStr, root_validator
 
 from langchain_google_genai._common import (
     GoogleGenerativeAIError,

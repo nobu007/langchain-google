@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from google.api_core import exceptions as core_exceptions  # type: ignore
 from google.auth.credentials import Credentials  # type: ignore
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 from langchain_google_community._utils import get_client_info
@@ -99,7 +99,7 @@ class VertexAICheckGroundingWrapper(
     ) -> CheckGroundingResponse:
         """
         Calls the Vertex Check Grounding API for a given answer candidate and a list
-        of documents (claims) to validate whether the set of claims support the 
+        of documents (claims) to validate whether the set of claims support the
         answer candidate.
 
         Args:
@@ -131,7 +131,7 @@ class VertexAICheckGroundingWrapper(
                 CheckGroundingResponse.Claim]):
                 Claim texts and citation info across all
                 claims in the answer candidate.
-            
+
             answer_with_citations (str):
                 Complete formed answer formatted with inline citations
         """

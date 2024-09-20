@@ -21,7 +21,7 @@ from langchain_core.outputs import (
     Generation,
     LLMResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain_google_vertexai._base import _BaseVertexAIModelGarden
 from langchain_google_vertexai._utils import enforce_stop_tokens

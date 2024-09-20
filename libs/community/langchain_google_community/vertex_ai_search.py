@@ -17,7 +17,7 @@ from google.protobuf.json_format import MessageToDict
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.load import Serializable, load
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
@@ -52,7 +52,7 @@ class _BaseVertexAISearchRetriever(Serializable):
     the environment."""
     engine_data_type: int = Field(default=0, ge=0, le=2)
     """ Defines the Vertex AI Search data type
-    0 - Unstructured data 
+    0 - Unstructured data
     1 - Structured data
     2 - Website data
     """
@@ -232,15 +232,15 @@ class VertexAISearchRetriever(BaseRetriever, _BaseVertexAISearchRetriever):
     """
     query_expansion_condition: int = Field(default=1, ge=0, le=2)
     """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified query expansion condition. In this case, server behavior defaults 
+    0 - Unspecified query expansion condition. In this case, server behavior defaults
         to disabled
-    1 - Disabled query expansion. Only the exact search query is used, even if 
+    1 - Disabled query expansion. Only the exact search query is used, even if
         SearchResponse.total_size is zero.
     2 - Automatic query expansion built by the Search API.
     """
     spell_correction_mode: int = Field(default=2, ge=0, le=2)
     """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified spell correction mode. In this case, server behavior defaults 
+    0 - Unspecified spell correction mode. In this case, server behavior defaults
         to auto.
     1 - Suggestion only. Search API will try to find a spell suggestion if there is any
         and put in the `SearchResponse.corrected_query`.
@@ -250,7 +250,7 @@ class VertexAISearchRetriever(BaseRetriever, _BaseVertexAISearchRetriever):
     """
     boost_spec: Optional[Dict[Any, Any]] = None
     """BoostSpec for boosting search results. A protobuf should be provided.
-    
+
     https://cloud.google.com/generative-ai-app-builder/docs/boost-search-results
     https://cloud.google.com/generative-ai-app-builder/docs/reference/rest/v1beta/BoostSpec
     """

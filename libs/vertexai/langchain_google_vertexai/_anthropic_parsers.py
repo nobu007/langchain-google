@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class ToolsOutputParser(BaseGenerationOutputParser):

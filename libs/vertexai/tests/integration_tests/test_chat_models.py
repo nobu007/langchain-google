@@ -22,7 +22,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_core.tools import tool
 
@@ -774,14 +774,14 @@ def test_structured_output_schema():
 @pytest.mark.extended
 def test_context_catching():
     system_instruction = """
-    
+
     You are an expert researcher. You always stick to the facts in the sources provided,
     and never make up new facts.
-    
+
     If asked about it, the secret number is 747.
-    
+
     Now look at these research papers, and answer the following questions.
-    
+
     """
 
     cached_content = create_context_cache(

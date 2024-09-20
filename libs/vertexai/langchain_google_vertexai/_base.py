@@ -22,7 +22,7 @@ from google.cloud.aiplatform_v1beta1.services.prediction_service import (
 from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Value
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from vertexai.generative_models._generative_models import (  # type: ignore
     SafetySettingsType,
 )
@@ -75,7 +75,7 @@ class _VertexAIBase(BaseModel):
     api_endpoint: Optional[str] = Field(default=None, alias="base_url")
     "Desired API endpoint, e.g., us-central1-aiplatform.googleapis.com"
     api_transport: Optional[str] = None
-    """The desired API transport method, can be either 'grpc' or 'rest'. 
+    """The desired API transport method, can be either 'grpc' or 'rest'.
     Uses the default parameter in vertexai.init if defined.
     """
     default_metadata: Sequence[Tuple[str, str]] = Field(
@@ -182,9 +182,9 @@ class _VertexAICommon(_VertexAIBase):
     """Whether to stream the results or not."""
     model_family: Optional[GoogleModelFamily] = None  #: :meta private:
     safety_settings: Optional["SafetySettingsType"] = None
-    """The default safety settings to use for all generations. 
-    
-        For example: 
+    """The default safety settings to use for all generations.
+
+        For example:
 
             from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
 

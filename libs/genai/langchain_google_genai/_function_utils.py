@@ -24,7 +24,6 @@ import google.ai.generativelanguage as glm
 import google.ai.generativelanguage_v1beta.types as gapic
 import proto  # type: ignore[import]
 from google.generativeai.types.content_types import ToolDict  # type: ignore[import]
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.tools import tool as callable_as_lc_tool
 from langchain_core.utils.function_calling import (
@@ -32,6 +31,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.json_schema import dereference_refs
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 log_level = os.environ.get("LOG_LEVEL", "WARNING").upper()

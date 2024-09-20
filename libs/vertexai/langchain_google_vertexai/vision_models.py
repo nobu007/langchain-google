@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatResult, LLMResult
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.outputs.generation import Generation
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from vertexai.preview.vision_models import (  # type: ignore[import-untyped]
     GeneratedImage,
     ImageGenerationModel,
@@ -326,8 +326,8 @@ class _BaseVertexAIImageGenerator(BaseModel):
     guidance_scale: Union[float, None] = Field(default=None)
     """Controls the strength of the prompt"""
     language: Union[str, None] = Field(default=None)
-    """Language of the text prompt for the image Supported values are "en" for English, 
-    "hi" for Hindi, "ja" for Japanese, "ko" for Korean, and "auto" for automatic 
+    """Language of the text prompt for the image Supported values are "en" for English,
+    "hi" for Hindi, "ja" for Japanese, "ko" for Korean, and "auto" for automatic
     language detection"""
     seed: Union[int, None] = Field(default=None)
     """Random seed for the image generation"""

@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
