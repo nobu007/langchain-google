@@ -324,7 +324,7 @@ def _format_base_tool_to_function_declaration(
     return gapic.FunctionDeclaration(
         name=tool.name or schema.get("title"),
         description=tool.description or schema.get("description"),
-        parameters=gapic_parameters,
+        parameters=parameters,
     )
 
 
