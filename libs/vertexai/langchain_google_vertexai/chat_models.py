@@ -112,7 +112,6 @@ from vertexai.language_models import (  # type: ignore
     CodeChatSession,
     InputOutputTextPair,
 )
-<<<<<<< HEAD
 from vertexai.preview.language_models import (  # type: ignore
     ChatModel as PreviewChatModel,
 )
@@ -157,10 +156,6 @@ from langchain_google_vertexai.functions_utils import (
 from pydantic import ConfigDict
 from typing_extensions import Self
 
-=======
-from vertexai.preview.language_models import ChatModel as PreviewChatModel  # type: ignore
-from vertexai.preview.language_models import CodeChatModel as PreviewCodeChatModel
->>>>>>> e42a24f (fix: check all BaseModel versions)
 
 logger = logging.getLogger(__name__)
 
@@ -1079,12 +1074,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     logprobs: Union[bool, int] = False
     """Whether to return logprobs as part of AIMessage.response_metadata.
-    
-    If False, don't return logprobs. If True, return logprobs for top candidate. 
+
+    If False, don't return logprobs. If True, return logprobs for top candidate.
     If int, return logprobs for top ``logprobs`` candidates.
-    
+
     **NOTE**: As of 10.28.24 this is only supported for gemini-1.5-flash models.
-    
+
     .. versionadded: 2.0.6
     """
 
